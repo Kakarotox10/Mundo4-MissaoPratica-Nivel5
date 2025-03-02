@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulação de Dispositivos IoT</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        canvas {
+            width: 80%;
+            height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <img src="logo.png" alt="Azure Hub Iot" width="200px" height="100px">
+        <h1> Azure Hub IoT - Simulação de Temperatura e Umidade</h1>
+        <canvas id="combinedChart"></canvas>
+    </div>
+
+    <script>
+        const socket = io();
+
+        // Contexto do gráfico
+        const ctx = document.getElementById('combinedChart').getContext('2d');
+
+        // Dados iniciais dos gráficos
+        const chartData = {
+            labels: [],
+            datasets: [
+                {
+                    label: 'Temperatura (°C)',
+                    data: [],
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1,
+                    fill: false
+                },
+                {
+                    label: 'Umidade (%)',
+                    data: [],
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1,
+                    fill: false
+                }
+            ]
+        };
+
+        // Criar o gráfico
+        const combinedChart = new Chart(ctx, {
+            type: 'line',
+            data: chartData,
+            options: {
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Receber dados do servidor em tempo real
+        socket.on('deviceData', (data) => {
+            const time = Date.now();
+
+            // Atualizar dados do gráfico de temperatura
+            chartData.labels.push(time);
+            chartData.datasets[0].data.push(data.temperature);
+            if (chartData.labels.length > 20) {
+                chartData.labels.shift();
+                chartData.datasets[0].data.shift();
+            }
+
+            // Atualizar dados do gráfico de umidade
+            chartData.datasets[1].data.push(data.humidity);
+            if (chartData.labels.length > 20) {
+                chartData.datasets[1].data.shift();
+            }
+
+            // Atualizar o gráfico
+            combinedChart.update();
+        });
+    </script>
+</body>
+</html>
